@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tugas Orientasi - Cendekia Aksara</title>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap'); body { font-family: 'Poppins', sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; } .container { max-width: 900px; width: 100%; margin: 20px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); } h1, h2, h3 { color: #003366; text-align: center; } .hidden { display: none !important; } .form-group { margin-bottom: 15px; } .form-group label { display: block; font-weight: 600; margin-bottom: 5px; } .form-group input, .form-group textarea, .form-group button { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; } .btn { padding: 10px 15px; border: none; border-radius: 8px; color: #fff; background-color: #005a9c; font-weight: 600; cursor: pointer; } .btn-danger { background-color: #dc3545;} .btn:disabled { background-color: #6c757d; cursor:not-allowed; } .assignment-list, .submission-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;} .card { background: #f9f9f9; border-radius: 8px; border: 1px solid #ddd; padding: 20px; } .card h3 { margin: 0 0 10px; color: #003366; text-align: left;} .card blockquote { border-left: 3px solid #ccc; padding-left: 15px; margin-left: 0; font-style: italic; max-height: 100px; overflow-y: auto; background-color: #fff; } .status-green { color: #28a745; font-weight: bold; } .status-orange { color: #fd7e14; font-weight: bold; } hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; } #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.8); display: flex; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.3s; } .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #005a9c; border-radius: 50%; animation: spin 1s linear infinite; } #loading-overlay p { margin-left: 15px; font-size: 1.1em; font-weight: 600; color: #003366; } @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+</head>
+<body>
+    <div class="container">
+        <div id="role-selection-view" class="view">
+            <h1>Portal Tugas Orientasi</h1><p style="text-align:center;">Silakan pilih peran Anda.</p>
+            <div style="display: flex; gap: 15px;">
+                <button id="role-siswa-btn" class="btn" style="flex:1;">Saya Siswa</button>
+                <button id="role-pengajar-btn" class="btn" style="flex:1; background-color:#6c757d;">Saya Pengajar</button>
+            </div>
+        </div>
+        <div id="login-view" class="view hidden"></div>
+        <div id="main-view" class="view hidden"></div>
+    </div>
+    <div id="loading-overlay" class="hidden"><div class="spinner"></div><p id="loading-text">Memuat...</p></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby-NW7ztxQERoILCUQEyLMnSJXAh8d7cNcGGb_ffNKW3Ci-nbhZjFMFGKbmggN4sWaw/exec';
+    const allViews = document.querySelectorAll('.view');
+    let currentUser = {};
+    let allDataCache = {}; // Cache untuk menyimpan data agar tidak fetch berulang
+
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const loadingText = document.getElementById('loading-text');
+    function showLoading(message) { loadingText.textContent = message; loadingOverlay.classList.remove('hidden'); }
+    function hideLoading() { loadingOverlay.classList.add('hidden'); }
+    function updateView(targetId) { allViews.forEach(v => v.classList.add('hidden')); document.getElementById(targetId).classList.remove('hidden'); }
+    
+    document.getElementById('role-siswa-btn').onclick = () => showStudentLogin();
+    document.getElementById('role-pengajar-btn').onclick = () => showPengajarLogin();
+    
+    function showStudentLogin() {
+        currentUser.role = 'siswa';
+        const savedName = localStorage.getItem('cendekiaMudaName');
+        if (savedName) { currentUser.name = savedName; renderStudentView(); return; }
+        document.getElementById('login-view').innerHTML = `<h2>Masuk sebagai Siswa</h2><p>Masukkan nama lengkapmu.</p><form id="name-form"><div class="form-group"><label for="nama-siswa">Nama Lengkap</label><input type="text" id="nama-siswa" required></div><button type="submit" class="btn">Lanjutkan</button></form>`;
+        updateView('login-view');
+        document.getElementById('name-form').onsubmit = (e) => { e.preventDefault(); currentUser.name = document.getElementById('nama-siswa').value; localStorage.setItem('cendekiaMudaName', currentUser.name); renderStudentView(); };
+    }
+
+    function showPengajarLogin() {
+        currentUser.role = 'pengajar';
+        document.getElementById('login-view').innerHTML = `<h2>Login Pengajar</h2><form id="pengajar-login-form"><div class="form-group"><label for="username">Username</label><input type="text" id="username" value="bayu" required></div><div class="form-group"><label for="password">Password</label><input type="password" id="password" value="bayu123" required></div><button type="submit" class="btn">Login</button></form>`;
+        updateView('login-view');
+        document.getElementById('pengajar-login-form').onsubmit = (e) => { e.preventDefault();
+            if (document.getElementById('username').value === 'bayu' && document.getElementById('password').value === 'bayu123') {
+                currentUser.name = 'Bayu';
+                renderPengajarView();
+            } else { alert('Username atau Password salah.'); }
+        };
+    }
+
+    async function renderPengajarView() {
+        updateView('main-view');
+        const mainView = document.getElementById('main-view');
+        mainView.innerHTML = `<h2>Dashboard Pengajar</h2><p>Kelola tugas pekan orientasi di sini.</p><div id="assignment-list" class="assignment-list"></div><hr><h3>Buat Tugas Baru</h3><p style="font-size:0.9em; color:#6c757d;">Membuat tugas baru akan otomatis menghapus tugas lama dan semua jawabannya.</p><form id="add-assignment-form"><div class="form-group"><label for="judul-tugas">Judul Tugas</label><input id="judul-tugas" required></div><div class="form-group"><label for="instruksi-tugas">Instruksi</label><textarea id="instruksi-tugas" rows="4" required></textarea></div><button type="submit" class="btn">Terbitkan Tugas</button></form>`;
+        
+        mainView.querySelector('#add-assignment-form').onsubmit = handleAddAssignment;
+        mainView.querySelector('#assignment-list').addEventListener('click', (e) => {
+            if (e.target.classList.contains('view-submissions-btn')) renderSubmissionsView(e.target.dataset.id);
+            if (e.target.classList.contains('delete-assignment-btn')) handleDeleteAssignment(e.target.dataset.id);
+        });
+        
+        showLoading('Memuat data...');
+        await fetchAndRenderAssignments();
+        hideLoading();
+    }
+
+    async function fetchAndRenderAssignments() {
+        const listDiv = document.getElementById('assignment-list');
+        listDiv.innerHTML = '<p>Memuat data...</p>';
+        try {
+            const response = await fetch(`${WEB_APP_URL}?action=getAllData`);
+            const data = await response.json();
+            allDataCache = data; // Simpan data di cache
+            listDiv.innerHTML = '';
+            
+            if (!Array.isArray(data.assignments) || data.assignments.length === 0) {
+                listDiv.innerHTML = '<p>Belum ada tugas yang dibuat.</p>';
+            } else {
+                data.assignments.forEach(assignment => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    const relatedSubmissions = data.submissions.filter(s => s.IDTugas === assignment.IDTugas);
+                    card.innerHTML = `<h3>${assignment.JudulTugas}</h3><p>${relatedSubmissions.length} jawaban terkumpul.</p><div style="margin-top:10px; display:flex; gap:10px;"><button class="btn view-submissions-btn" data-id="${assignment.IDTugas}">Lihat Jawaban</button><button class="btn btn-danger delete-assignment-btn" data-id="${assignment.IDTugas}">Hapus Tugas</button></div>`;
+                    listDiv.appendChild(card);
+                });
+            }
+        } catch(err) { listDiv.innerHTML = '<p>Gagal memuat data.</p>'; }
+    }
+
+    // --- FUNGSI BARU YANG SEBELUMNYA HILANG ---
+    function renderSubmissionsView(assignmentId) {
+        const mainView = document.getElementById('main-view');
+        const assignment = allDataCache.assignments.find(a => a.IDTugas === assignmentId);
+        mainView.innerHTML = `<h2>Menilai Jawaban untuk: ${assignment.JudulTugas}</h2><button class="btn" onclick="renderPengajarView()">← Kembali ke Dashboard</button><div id="submission-grid" class="submission-grid"></div>`;
+        const grid = mainView.querySelector('#submission-grid');
+        grid.innerHTML = '';
+        
+        const relatedSubmissions = allDataCache.submissions.filter(s => s.IDTugas === assignmentId);
+        if(relatedSubmissions.length === 0) { grid.innerHTML = '<p>Belum ada jawaban untuk tugas ini.</p>'; return; }
+        
+        relatedSubmissions.forEach(sub => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `<h3>${sub.NamaSiswa}</h3><p>Status: <span class="${sub.Status === 'Sudah Dinilai' ? 'status-green' : 'status-orange'}">${sub.Status}</span></p><hr><h4>Jawaban:</h4><blockquote>${sub.Jawaban}</blockquote><hr><div id="review-section-${sub.IDJawaban}"></div>`;
+            grid.appendChild(card);
+            
+            const reviewContainer = document.getElementById(`review-section-${sub.IDJawaban}`);
+            if (sub.Status === 'Sudah Dinilai') {
+                reviewContainer.innerHTML = `<h4>Hasil Review</h4><p><b>Nilai:</b> ${sub.Nilai}</p><p><b>Feedback:</b> ${sub.Feedback}</p>`;
+            } else {
+                reviewContainer.innerHTML = `<form class="grade-form" data-id="${sub.IDJawaban}"><div class="form-group"><label>Nilai</label><input class="nilai-input" required></div><div class="form-group"><label>Feedback</label><textarea class="feedback-input" rows="3" required></textarea></div><button type="submit" class="btn">Simpan Nilai</button></form>`;
+            }
+        });
+    }
+
+    // --- Event listener dipindahkan ke elemen yang lebih persisten (container) ---
+    document.querySelector('.container').addEventListener('submit', e => {
+        if (e.target.classList.contains('grade-form')) handleGradeSubmit(e);
+    });
+
+    function handleGradeSubmit(e) {
+        e.preventDefault();
+        const btn = e.target.querySelector('button');
+        btn.disabled = true; showLoading('Menyimpan nilai...');
+        const submissionId = e.target.dataset.id;
+        const payload = {
+            action: "submitGrade", IDJawaban: submissionId,
+            Nilai: e.target.querySelector('.nilai-input').value,
+            Feedback: e.target.querySelector('.feedback-input').value
+        };
+        fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(res => res.json()).then(data => { if(data.status === 'success') renderPengajarView(); })
+        .finally(() => hideLoading());
+    }
+    
+    function handleAddAssignment(e) { e.preventDefault(); const btn = e.target.querySelector('button'); btn.disabled = true; showLoading('Menerbitkan tugas...'); const payload = { action: "addAssignment", JudulTugas: document.getElementById('judul-tugas').value, Instruksi: document.getElementById('instruksi-tugas').value }; fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) }).then(res => res.json()).then(data => { if(data.status === 'success') renderPengajarView(); }).finally(() => hideLoading()); }
+    function handleDeleteAssignment(assignmentId) { if(confirm('Yakin ingin menghapus tugas ini beserta semua jawabannya?')){ showLoading('Menghapus tugas...'); fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteAssignment', IDTugas: assignmentId }) }).then(res => res.json()).then(data => { if(data.status === 'success') renderPengajarView(); }).finally(() => hideLoading()); } }
+
+    // --- PORTAL SISWA ---
+    async function renderStudentView() {
+        updateView('main-view');
+        const mainView = document.getElementById('main-view');
+        showLoading(`Memuat tugas untuk ${currentUser.name}...`);
+        try {
+            const response = await fetch(`${WEB_APP_URL}?action=getStudentView&nama=${encodeURIComponent(currentUser.name)}`);
+            const { activeAssignment, mySubmission } = await response.json();
+
+            if (mySubmission) {
+                mainView.innerHTML = `<h2>Status Pengumpulan Tugas</h2><div class="card"><h3>${mySubmission.JudulTugas}</h3><p>Jawaban Anda sudah terkirim.</p><hr><h4>Hasil Review</h4><p><b>Status:</b> ${mySubmission.Status}</p><p><b>Nilai:</b> ${mySubmission.Nilai || 'Belum dinilai'}</p><p><b>Feedback:</b> ${mySubmission.Feedback || '-'}</p></div>`;
+            } else if (activeAssignment) {
+                 mainView.innerHTML = `<h2>Tugas: ${activeAssignment.JudulTugas}</h2><div class="card"><p>${activeAssignment.Instruksi.replace(/\n/g, '<br>')}</p></div><hr><form id="submission-form"><div class="form-group"><label for="jawaban"><h3>Jawaban Anda</h3></label><textarea id="jawaban" rows="10" required></textarea></div><button type="submit" class="btn">Kirim Jawaban</button></form>`;
+                 mainView.querySelector('#submission-form').onsubmit = (e) => {
+                     e.preventDefault();
+                     showLoading('Mengirim jawaban...');
+                     const btn = e.target.querySelector('button');
+                     btn.disabled = true;
+                     const payload = { action: "submitAnswer", IDTugas: activeAssignment.IDTugas, NamaSiswa: currentUser.name, Jawaban: document.getElementById('jawaban').value };
+                     fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
+                     .then(res => res.json()).then(data => { if(data.status === 'success') renderStudentView(); })
+                     .finally(() => hideLoading());
+                 };
+            } else {
+                mainView.innerHTML = '<h2>Selamat Datang!</h2><p>Saat ini belum ada tugas orientasi yang aktif. Silakan cek kembali nanti.</p>';
+            }
+        } catch(err) { mainView.innerHTML = '<p>Gagal memuat tugas.</p>'; }
+        finally { hideLoading(); }
+    }
+    
+    updateView('role-selection-view');
+});
+</script>
+</body>
+</html>

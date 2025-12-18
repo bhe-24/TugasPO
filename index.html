@@ -1,185 +1,759 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tugas Orientasi - Cendekia Aksara</title>
-    <style>@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap'); body { font-family: 'Poppins', sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; } .container { max-width: 900px; width: 100%; margin: 20px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); } h1, h2, h3 { color: #003366; text-align: center; } .hidden { display: none !important; } .form-group { margin-bottom: 15px; } .form-group label { display: block; font-weight: 600; margin-bottom: 5px; } .form-group input, .form-group textarea, .form-group button { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; } .btn { padding: 10px 15px; border: none; border-radius: 8px; color: #fff; background-color: #005a9c; font-weight: 600; cursor: pointer; } .btn-danger { background-color: #dc3545;} .btn:disabled { background-color: #6c757d; } .assignment-list, .submission-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;} .card { background: #f9f9f9; border-radius: 8px; border: 1px solid #ddd; padding: 20px; } .card h3 { margin: 0 0 10px; color: #003366; text-align: left;} .card blockquote { border-left: 3px solid #ccc; padding-left: 15px; margin-left: 0; font-style: italic; max-height: 100px; overflow-y: auto; background-color: #fff; } .status-green { color: #28a745; font-weight: bold; } .status-orange { color: #fd7e14; font-weight: bold; } hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; } #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.8); display: flex; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.3s; } .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #005a9c; border-radius: 50%; animation: spin 1s linear infinite; } #loading-overlay p { margin-left: 15px; font-size: 1.1em; font-weight: 600; color: #003366; } @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+    
+    <!-- Firebase SDK (v8) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap'); 
+        
+        :root {
+            --primary-color: #005a9c;
+            --secondary-color: #f7a04a;
+            --bg-color: #f4f7fa;
+            --text-color: #333;
+            --card-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            --card-hover: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: var(--bg-color); 
+            margin: 0; 
+            padding: 20px; 
+            color: var(--text-color); 
+            line-height: 1.6;
+        } 
+
+        /* Container yang lebih Luas & Rapi */
+        .container { 
+            max-width: 1100px; /* Diperlebar agar grid desktop lebih lega */
+            width: 100%; 
+            margin: 0 auto; 
+            background: transparent; /* Transparan agar menyatu dengan BG */
+        } 
+
+        /* View Containers (Card Style untuk Wrapper Utama) */
+        .view-card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+        }
+
+        h1, h2, h3 { color: #003366; margin-top: 0; } 
+        h1 { font-size: 1.8rem; text-align: center; }
+        h2 { font-size: 1.5rem; }
+
+        .hidden { display: none !important; } 
+
+        /* Form Elements Modern */
+        .form-group { margin-bottom: 20px; } 
+        .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #444; font-size: 0.95rem; } 
+        
+        .form-control, input[type="text"], input[type="email"], input[type="password"], textarea, select { 
+            width: 100%; 
+            padding: 12px 16px; 
+            border: 2px solid #eef1f6; 
+            border-radius: 10px; 
+            font-family: inherit; 
+            font-size: 1rem;
+            transition: all 0.3s;
+            background-color: #fff;
+        } 
+        
+        .form-control:focus, input:focus, textarea:focus { 
+            border-color: var(--primary-color); 
+            outline: none; 
+            box-shadow: 0 0 0 4px rgba(0, 90, 156, 0.1);
+        }
+
+        textarea { resize: vertical; min-height: 100px; }
+
+        /* Tombol Modern */
+        .btn { 
+            padding: 12px 24px; 
+            border: none; 
+            border-radius: 10px; 
+            color: #fff; 
+            background: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color), #004080);
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0,90,156,0.2);
+        } 
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,90,156,0.3); }
+        .btn:active { transform: scale(0.98); }
+        .btn-danger { 
+            background: #dc3545; 
+            background: linear-gradient(135deg, #dc3545, #b02a37);
+            box-shadow: 0 4px 6px rgba(220, 53, 69, 0.2); 
+        } 
+        .btn-secondary { background: #6c757d; box-shadow: 0 4px 6px rgba(108, 117, 125, 0.2); }
+        .btn:disabled { background: #b0c4de; cursor: not-allowed; opacity: 0.7; transform: none; box-shadow: none; } 
+
+        /* Grid Layouts yang Lebih Cantik */
+        .assignment-list, .submission-grid { 
+            display: grid; 
+            /* Menggunakan auto-fill agar mengisi kolom secara cerdas */
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 25px; 
+            margin-top: 25px;
+        } 
+
+        /* Cards untuk Tugas */
+        .card { 
+            background: #fff; 
+            border-radius: 16px; 
+            border: none;
+            padding: 25px; 
+            box-shadow: var(--card-shadow); 
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        } 
+        .card:hover { transform: translateY(-5px); box-shadow: var(--card-hover); }
+        .card h3 { margin: 0 0 10px; color: #003366; font-size: 1.25rem; line-height: 1.4; } 
+        .card p { color: #666; font-size: 0.95rem; margin-bottom: 20px; line-height: 1.6; }
+        .card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%;
+            background: var(--secondary-color); border-radius: 4px 0 0 4px;
+        }
+
+        /* Submission Detail Card (Admin) - Dipercantik */
+        .submission-detail-card { 
+            background: #fff;
+            border-radius: 12px; 
+            padding: 20px; 
+            margin-bottom: 20px; 
+            box-shadow: var(--card-shadow);
+            border-left: 5px solid #ddd;
+        }
+        .submission-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid #f0f0f0; 
+            padding-bottom: 15px; 
+            margin-bottom: 15px; 
+        }
+        .submission-score { 
+            font-size: 1.4em; 
+            font-weight: 700; 
+            padding: 5px 15px; 
+            border-radius: 50px; 
+            color: #fff; 
+            text-align: center; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .submission-answer { 
+            background: #fcfcfc; 
+            padding: 20px; 
+            border-radius: 12px; 
+            border: 1px solid #eee;
+            margin-bottom: 15px; 
+            white-space: pre-wrap; 
+            font-size: 0.95rem; 
+            color: #444;
+        }
+        
+        /* Modal Styles */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(5px); }
+        .modal.active { opacity: 1; pointer-events: auto; }
+        .modal-content { background: white; padding: 35px; border-radius: 20px; width: 90%; max-width: 450px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); transform: scale(0.95); transition: transform 0.3s; max-height: 90vh; overflow-y: auto; }
+        .modal.active .modal-content { transform: scale(1); }
+        .modal-icon { font-size: 3.5rem; margin-bottom: 20px; display: block; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        /* Loading Overlay */
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(2px); } 
+        .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; } 
+        #loading-overlay p { margin-top: 20px; font-size: 1.1rem; font-weight: 600; color: var(--primary-color); } 
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Score Badge */
+        .score-circle { width: 120px; height: 120px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; margin: 0 auto 20px auto; box-shadow: 0 10px 30px rgba(0,90,156,0.4); border: 5px solid #fff; }
+        .tag-info { background: #e3f2fd; color: #005a9c; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: inline-block; margin-bottom: 15px; }
+
+        /* Login Card - Pusat Layar */
+        .login-card { max-width: 400px; margin: 5vh auto; background: #fff; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+
+        /* --- MOBILE RESPONSIVE TWEAKS --- */
+        @media (max-width: 768px) {
+            body { padding: 15px; background-color: #fff; }
+            .container { padding: 0; box-shadow: none; }
+            .view-card { padding: 20px; border-radius: 12px; box-shadow: none; border: 1px solid #eee; }
+            
+            h1 { font-size: 1.5rem; margin-bottom: 5px; }
+            h2 { font-size: 1.3rem; }
+            
+            .btn { width: 100%; margin-bottom: 10px; }
+            .btn:last-child { margin-bottom: 0; }
+            
+            /* Pada HP, card tetap 1 kolom tapi tidak terlalu gepeng */
+            .assignment-list, .submission-grid { grid-template-columns: 1fr; gap: 20px; } 
+            
+            /* Header submission tetap berusaha sebaris, kalau tidak muat baru turun */
+            .submission-header { flex-wrap: wrap; gap: 10px; }
+            .submission-score { margin-left: auto; } /* Dorong nilai ke kanan */
+            
+            .login-card { box-shadow: none; border: 1px solid #eee; margin-top: 10px; padding: 25px; }
+        }
+    </style>
 </head>
 <body>
+
     <div class="container">
-        <div id="role-selection-view" class="view">
-            <h1>Portal Tugas Orientasi</h1><p style="text-align:center;">Silakan pilih peran Anda.</p>
-            <div style="display: flex; gap: 15px;">
-                <button id="role-siswa-btn" class="btn" style="flex:1;">Saya Siswa</button>
-                <button id="role-pengajar-btn" class="btn" style="flex:1; background-color:#6c757d;">Saya Pengajar</button>
+        
+        <!-- Tampilan Login Terpadu -->
+        <div id="login-view" class="view">
+            <div class="login-card">
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <i class="fa-solid fa-graduation-cap" style="font-size: 3.5rem; color: var(--primary-color);"></i>
+                </div>
+                <h1 style="margin-bottom: 5px;">Pekan Orientasi</h1>
+                <p style="text-align:center; color:#666; margin-bottom: 30px;">Masuk untuk mengakses tugas</p>
+                
+                <form id="form-login-unified">
+                    <div class="form-group">
+                        <label for="login-email">Email / Identitas</label>
+                        <input type="email" id="login-email" placeholder="nama@email.com" required autocomplete="email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="Password akun" required autocomplete="current-password">
+                    </div>
+
+                    <button type="submit" class="btn">
+                        <span>Masuk</span> <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </form>
             </div>
         </div>
-        <div id="login-view" class="view hidden"></div>
+
+        <!-- Dashboard Utama -->
         <div id="main-view" class="view hidden"></div>
+
+        <!-- Halaman Detail Jawaban (Admin) -->
+        <div id="submission-detail-view" class="view hidden">
+            <div class="view-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h2 style="margin:0; text-align:left; font-size: 1.4rem;">Hasil Jawaban</h2>
+                        <small id="task-info-header" style="color:#666; font-size: 0.9rem;"></small>
+                    </div>
+                    <button class="btn btn-secondary" onclick="backToDashboard()" style="width: auto; padding: 8px 20px; font-size: 0.9rem;">
+                        <i class="fa-solid fa-arrow-left"></i> Kembali
+                    </button>
+                </div>
+                <hr style="border:0; border-top:1px dashed #ddd; margin-bottom:25px;">
+                <div id="submission-list-container"></div>
+            </div>
+        </div>
+
     </div>
+
+    <!-- UI Overlays -->
     <div id="loading-overlay" class="hidden"><div class="spinner"></div><p id="loading-text">Memuat...</p></div>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby-NW7ztxQERoILCUQEyLMnSJXAh8d7cNcGGb_ffNKW3Ci-nbhZjFMFGKbmggN4sWaw/exec';
-    const allViews = document.querySelectorAll('.view');
-    let currentUser = {};
-    let allDataCache = {}; 
+    <!-- Modal Konfirmasi -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-icon">⚠️</span>
+            <h3 style="margin-bottom: 10px;">Konfirmasi Kirim</h3>
+            <p style="margin-bottom: 25px; color: #555;">Jawaban hanya dapat dikirim <strong>SATU KALI</strong>. Pastikan jawaban Anda sudah lengkap sebelum mengirim.</p>
+            <div style="display: flex; gap: 10px; margin-top: 20px; flex-direction: column-reverse;">
+                <button class="btn btn-secondary" onclick="closeModal('confirm-modal')">Periksa Lagi</button>
+                <button id="confirm-submit-btn" class="btn">Ya, Kirim Sekarang</button>
+            </div>
+        </div>
+    </div>
 
+    <!-- Modal Hasil Nilai -->
+    <div id="result-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-icon">✨</span>
+            <h3 style="margin-bottom: 5px;">Tugas Selesai!</h3>
+            <p style="color: #666;">Analisis otomatis selesai.</p>
+            <div class="score-circle" id="result-score">0</div>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                <p id="result-feedback" style="font-size: 0.95em; color: #444; font-style: italic; margin: 0;"></p>
+            </div>
+            <button class="btn" onclick="closeModal('result-modal'); location.reload();">Tutup & Refresh</button>
+        </div>
+    </div>
+
+<script>
+    // --- 1. KONFIGURASI FIREBASE ---
+    const firebaseConfig = { 
+        apiKey: "AIzaSyDpUWUIzPXIZN6rrNtsIqcL6VfOE2RLVl0", 
+        authDomain: "mading-cf676.firebaseapp.com", 
+        projectId: "mading-cf676", 
+        storageBucket: "mading-cf676.appspot.com", 
+        messagingSenderId: "72175203671", 
+        appId: "1:72175203671:web:7a0676a55beb64bc96ba12" 
+    };
+    
+    // Inisialisasi Firebase
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // Variables
+    const allViews = document.querySelectorAll('.view');
+    let currentUser = {}; 
+
+    // --- 2. FUNGSI UTILITAS ---
     const loadingOverlay = document.getElementById('loading-overlay');
     const loadingText = document.getElementById('loading-text');
     function showLoading(message) { loadingText.textContent = message; loadingOverlay.classList.remove('hidden'); }
     function hideLoading() { loadingOverlay.classList.add('hidden'); }
-    function updateView(targetId) { allViews.forEach(v => v.classList.add('hidden')); document.getElementById(targetId).classList.remove('hidden'); }
-    
-    document.getElementById('role-siswa-btn').onclick = () => showStudentLogin();
-    document.getElementById('role-pengajar-btn').onclick = () => showPengajarLogin();
-    
-    function showStudentLogin() {
-        currentUser.role = 'siswa';
-        const savedName = localStorage.getItem('cendekiaMudaName');
-        if (savedName) { currentUser.name = savedName; renderStudentView(); return; }
-        document.getElementById('login-view').innerHTML = `<h2>Masuk sebagai Siswa</h2><p>Masukkan nama lengkapmu.</p><form id="name-form"><div class="form-group"><label for="nama-siswa">Nama Lengkap</label><input type="text" id="nama-siswa" required></div><button type="submit" class="btn">Lanjutkan</button></form>`;
-        updateView('login-view');
-        document.getElementById('name-form').onsubmit = (e) => { e.preventDefault(); currentUser.name = document.getElementById('nama-siswa').value; localStorage.setItem('cendekiaMudaName', currentUser.name); renderStudentView(); };
+    function updateView(targetId) { 
+        window.scrollTo(0, 0); 
+        allViews.forEach(v => v.classList.add('hidden')); 
+        document.getElementById(targetId).classList.remove('hidden'); 
     }
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-    function showPengajarLogin() {
-        currentUser.role = 'pengajar';
-        // --- PERBAIKAN #2: Menghapus atribut 'value' agar form tidak terisi otomatis ---
-        document.getElementById('login-view').innerHTML = `<h2>Login Pengajar</h2><form id="pengajar-login-form"><div class="form-group"><label for="username">Username</label><input type="text" id="username" required></div><div class="form-group"><label for="password">Password</label><input type="password" id="password" required></div><button type="submit" class="btn">Login</button></form>`;
-        updateView('login-view');
-        document.getElementById('pengajar-login-form').onsubmit = (e) => { e.preventDefault();
-            if (document.getElementById('username').value === 'bayu' && document.getElementById('password').value === 'bayu123') {
-                currentUser.name = 'Bayu';
-                renderPengajarView();
-            } else { alert('Username atau Password salah.'); }
-        };
-    }
+    // --- 3. AUTH STATE LISTENER ---
+    auth.onAuthStateChanged(async user => {
+        if (user) {
+            showLoading('Memuat data...');
+            try {
+                const doc = await db.collection('users').doc(user.uid).get();
+                let userData = {};
+                if (doc.exists) {
+                    userData = doc.data();
+                } else {
+                    const role = user.email.endsWith('@ac.id') ? 'pengajar' : 'siswa';
+                    userData = {
+                        name: user.displayName || user.email.split('@')[0], 
+                        role: role
+                    };
+                    await db.collection('users').doc(user.uid).set(userData, { merge: true });
+                }
 
-    async function renderPengajarView() {
-        updateView('main-view');
-        const mainView = document.getElementById('main-view');
-        mainView.innerHTML = `<h2>Dashboard Pengajar</h2><p>Kelola tugas pekan orientasi di sini.</p><div id="assignment-list" class="assignment-list"></div><hr><h3>Buat Tugas Baru</h3><p style="font-size:0.9em; color:#6c757d;">Membuat tugas baru akan otomatis menghapus tugas lama dan semua jawabannya.</p><form id="add-assignment-form"><div class="form-group"><label for="judul-tugas">Judul Tugas</label><input id="judul-tugas" required></div><div class="form-group"><label for="instruksi-tugas">Instruksi</label><textarea id="instruksi-tugas" rows="4" required></textarea></div><button type="submit" class="btn">Terbitkan Tugas</button></form>`;
-        
-        mainView.querySelector('#add-assignment-form').onsubmit = handleAddAssignment;
-        mainView.querySelector('#assignment-list').addEventListener('click', (e) => {
-            if (e.target.classList.contains('view-submissions-btn')) renderSubmissionsView(e.target.dataset.id);
-            if (e.target.classList.contains('delete-assignment-btn')) handleDeleteAssignment(e.target.dataset.id);
-        });
-        
-        showLoading('Memuat data pengajar...');
-        await fetchAndRenderAssignments();
-        hideLoading();
-    }
+                currentUser = {
+                    uid: user.uid,
+                    name: userData.name,
+                    role: userData.role,
+                    email: user.email
+                };
 
-    async function fetchAndRenderAssignments() {
-        const listDiv = document.getElementById('assignment-list');
-        listDiv.innerHTML = '<p>Memuat data...</p>';
-        try {
-            const response = await fetch(`${WEB_APP_URL}?action=getAllData`);
-            const data = await response.json();
-            allDataCache = data;
-            listDiv.innerHTML = '';
-            
-            if (!Array.isArray(data.assignments) || data.assignments.length === 0) {
-                listDiv.innerHTML = '<p>Belum ada tugas yang dibuat.</p>';
-            } else {
-                data.assignments.forEach(assignment => {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    const relatedSubmissions = data.submissions.filter(s => s.IDTugas === assignment.IDTugas);
-                    card.innerHTML = `<h3>${assignment.JudulTugas}</h3><p>${relatedSubmissions.length} jawaban terkumpul.</p><div style="margin-top:10px; display:flex; gap:10px;"><button class="btn view-submissions-btn" data-id="${assignment.IDTugas}">Lihat Jawaban</button><button class="btn btn-danger delete-assignment-btn" data-id="${assignment.IDTugas}">Hapus Tugas</button></div>`;
-                    listDiv.appendChild(card);
-                });
+                if (currentUser.role === 'pengajar' || currentUser.email.endsWith('@ac.id')) {
+                    renderPengajarDashboard();
+                } else {
+                    renderStudentDashboard();
+                }
+
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Gagal memuat profil: " + error.message);
+                auth.signOut();
+            } finally {
+                hideLoading();
             }
-        } catch(err) { listDiv.innerHTML = '<p>Gagal memuat data.</p>'; }
-    }
-
-    async function renderSubmissionsView(assignmentId) {
-        const mainView = document.getElementById('main-view');
-        const assignment = allDataCache.assignments.find(a => a.IDTugas === assignmentId);
-        // --- PERBAIKAN #1: Memberi ID pada tombol kembali ---
-        mainView.innerHTML = `<h2>Menilai Jawaban untuk: ${assignment.JudulTugas}</h2><button class="btn" id="back-to-dashboard-btn">← Kembali ke Dashboard</button><div id="submission-grid" class="submission-grid"></div>`;
-        const grid = mainView.querySelector('#submission-grid');
-        grid.innerHTML = '<p>Memuat jawaban...</p>';
-        
-        // --- PERBAIKAN #1: Menambahkan event listener secara dinamis ---
-        mainView.querySelector('#back-to-dashboard-btn').onclick = renderPengajarView;
-        
-        const relatedSubmissions = allDataCache.submissions.filter(s => s.IDTugas === assignmentId);
-        if(relatedSubmissions.length === 0) { grid.innerHTML = '<p>Belum ada jawaban untuk tugas ini.</p>'; return;}
-        
-        relatedSubmissions.forEach(sub => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `<h3>${sub.NamaSiswa}</h3><p>Status: <span class="${sub.Status === 'Sudah Dinilai' ? 'status-green' : 'status-orange'}">${sub.Status}</span></p><hr><h4>Jawaban:</h4><blockquote>${sub.Jawaban}</blockquote><hr><div id="review-section-${sub.IDJawaban}"></div>`;
-            grid.appendChild(card);
-            
-            const reviewContainer = document.getElementById(`review-section-${sub.IDJawaban}`);
-            if (sub.Status === 'Sudah Dinilai') {
-                reviewContainer.innerHTML = `<h4>Hasil Review</h4><p><b>Nilai:</b> ${sub.Nilai}</p><p><b>Feedback:</b> ${sub.Feedback}</p>`;
-            } else {
-                reviewContainer.innerHTML = `<form class="grade-form" data-id="${sub.IDJawaban}"><div class="form-group"><label>Nilai</label><input class="nilai-input" required></div><div class="form-group"><label>Feedback</label><textarea class="feedback-input" rows="3" required></textarea></div><button type="submit" class="btn">Simpan Nilai</button></form>`;
-            }
-        });
-    }
-    
-    document.querySelector('.container').addEventListener('submit', e => {
-        if(e.target.classList.contains('grade-form')) {
-            e.preventDefault();
-            const btn = e.target.querySelector('button');
-btn.disabled = true; showLoading('Menyimpan nilai...');
-            const submissionId = e.target.dataset.id;
-            const payload = {
-                action: "submitGrade", IDJawaban: submissionId,
-                Nilai: e.target.querySelector('.nilai-input').value,
-                Feedback: e.target.querySelector('.feedback-input').value
-            };
-            fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
-            .then(res => res.json()).then(data => { if(data.status === 'success') {
-                // Refresh data cache setelah menilai
-                fetch(`${WEB_APP_URL}?action=getAllData`).then(res => res.json()).then(newData => {
-                    allDataCache = newData;
-                    renderSubmissionsView(allDataCache.submissions.find(s=>s.IDJawaban === submissionId).IDTugas);
-                });
-            }}).finally(() => hideLoading());
+        } else {
+            updateView('login-view');
+            hideLoading();
         }
     });
-    
-    function handleAddAssignment(e) { e.preventDefault(); const btn = e.target.querySelector('button'); btn.disabled = true; showLoading('Menerbitkan tugas...'); const payload = { action: "addAssignment", JudulTugas: document.getElementById('judul-tugas').value, Instruksi: document.getElementById('instruksi-tugas').value }; fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) }).then(res => res.json()).then(data => { if(data.status === 'success') renderPengajarView(); }).finally(() => hideLoading()); }
-    function handleDeleteAssignment(assignmentId) { if(confirm('Yakin ingin menghapus tugas ini beserta semua jawabannya?')){ showLoading('Menghapus tugas...'); fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteAssignment', IDTugas: assignmentId }) }).then(res => res.json()).then(data => { if(data.status === 'success') renderPengajarView(); }).finally(() => hideLoading()); } }
 
-    async function renderStudentView() {
+    // --- 4. LOGIKA LOGIN ---
+    document.getElementById('form-login-unified').onsubmit = (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
+
+        if (!email || !password) {
+            alert("Email dan Password wajib diisi.");
+            return;
+        }
+
+        showLoading('Memverifikasi...');
+        auth.signInWithEmailAndPassword(email, password)
+            .catch((error) => {
+                hideLoading();
+                let msg = "Login gagal.";
+                if(error.code === 'auth/wrong-password') msg = "Password salah.";
+                if(error.code === 'auth/user-not-found') msg = "Akun tidak ditemukan.";
+                if(error.code === 'auth/invalid-email') msg = "Format email salah.";
+                alert(msg);
+            });
+    };
+
+    window.logout = () => {
+        if(confirm("Keluar dari aplikasi?")) {
+            showLoading('Keluar...');
+            auth.signOut().then(() => location.reload());
+        }
+    };
+
+    // --- 5. DASHBOARD SISWA (UI & UX OPTIMIZED) ---
+    async function renderStudentDashboard() {
         updateView('main-view');
         const mainView = document.getElementById('main-view');
-        showLoading(`Memuat tugas untuk ${currentUser.name}...`);
+        showLoading('Menyiapkan tugas...');
+        
         try {
-            const response = await fetch(`${WEB_APP_URL}?action=getStudentView&nama=${encodeURIComponent(currentUser.name)}`);
-            const { activeAssignment, mySubmission } = await response.json();
+            const tasksSnap = await db.collection('orientation_tasks').orderBy('createdAt', 'desc').get();
+            const subSnap = await db.collection('orientation_submissions')
+                .where('studentUid', '==', currentUser.uid).get();
+            
+            let mySubmission = null;
+            if (!subSnap.empty) { mySubmission = subSnap.docs[0].data(); }
+
+            // Header Siswa dalam Card
+            mainView.innerHTML = `
+                <div class="view-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <small style="color:#888;">Selamat Datang,</small>
+                            <h2 style="margin:0; font-size: 1.5rem; color:var(--primary-color);">${currentUser.name}</h2>
+                        </div>
+                        <button class="btn btn-danger" onclick="logout()" style="padding: 8px 12px; width: auto; margin:0;">
+                            <i class="fa-solid fa-power-off"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="student-content"></div>
+            `;
+
+            const contentDiv = document.getElementById('student-content');
+
             if (mySubmission) {
-                mainView.innerHTML = `<h2>Status Pengumpulan Tugas</h2><div class="card"><h3>${mySubmission.JudulTugas}</h3><p>Jawaban Anda sudah terkirim.</p><hr><h4>Hasil Review</h4><p><b>Status:</b> ${mySubmission.Status}</p><p><b>Nilai:</b> ${mySubmission.Nilai || 'Belum dinilai'}</p><p><b>Feedback:</b> ${mySubmission.Feedback || '-'}</p></div>`;
-            } else if (activeAssignment) {
-                 mainView.innerHTML = `<h2>Tugas: ${activeAssignment.JudulTugas}</h2><div class="card"><p>${activeAssignment.Instruksi.replace(/\n/g, '<br>')}</p></div><hr><form id="submission-form"><div class="form-group"><label for="jawaban"><h3>Jawaban Anda</h3></label><textarea id="jawaban" rows="10" required></textarea></div><button type="submit" class="btn">Kirim Jawaban</button></form>`;
-                 mainView.querySelector('#submission-form').onsubmit = (e) => {
-                     e.preventDefault();
-                     showLoading('Mengirim jawaban...');
-                     const btn = e.target.querySelector('button');
-                     btn.disabled = true;
-                     const payload = { action: "submitAnswer", IDTugas: activeAssignment.IDTugas, NamaSiswa: currentUser.name, Jawaban: document.getElementById('jawaban').value };
-                     fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) })
-                     .then(res => res.json()).then(data => { if(data.status === 'success') renderStudentView(); })
-                     .finally(() => hideLoading());
-                 };
+                // STATUS: SUDAH DIKERJAKAN
+                contentDiv.innerHTML = `
+                    <div class="view-card" style="text-align:center; padding:50px 30px;">
+                        <div style="background:#e8f5e9; width:90px; height:90px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 25px auto;">
+                            <i class="fa-solid fa-check" style="font-size:3rem; color:#28a745;"></i>
+                        </div>
+                        <h3 style="font-size:1.6rem; margin-bottom: 10px;">Tugas Selesai</h3>
+                        <p style="margin-bottom: 30px; color:#666;">Anda telah menyelesaikan masa orientasi.</p>
+                        
+                        <div style="background:#f8f9fa; padding:30px; border-radius:16px; display:inline-block; width:100%; max-width:400px; border:1px solid #eee;">
+                            <p style="margin-bottom:15px; font-size:1rem; color:#555; font-weight:600;">Nilai Kelulusan:</p>
+                            <div class="score-circle" style="margin-bottom: 20px;">
+                                ${mySubmission.score}
+                            </div>
+                            <p style="font-size:0.95rem; color:#555; font-style:italic;">
+                                "${mySubmission.feedback}"
+                            </p>
+                        </div>
+                    </div>
+                `;
+            } else if (!tasksSnap.empty) {
+                // STATUS: BELUM DIKERJAKAN
+                const taskDoc = tasksSnap.docs[0];
+                const task = taskDoc.data();
+                
+                contentDiv.innerHTML = `
+                    <div class="view-card">
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
+                            <span class="tag-info"><i class="fa-solid fa-star"></i> Tugas Aktif</span>
+                        </div>
+                        <h3 style="font-size: 1.6rem; margin-bottom: 20px;">${task.title}</h3>
+                        
+                        <div style="background:#f0f7ff; padding:20px; border-radius:12px; margin-bottom:25px; border-left: 5px solid var(--primary-color);">
+                            <strong style="color:var(--primary-color); display:block; margin-bottom:8px; font-size:1.1rem;">Instruksi Pengerjaan:</strong>
+                            <p style="white-space: pre-line; margin:0; font-size:1rem; color:#444;">${task.instruction}</p>
+                        </div>
+                        
+                        <form id="submission-form">
+                            <input type="hidden" id="task-id" value="${taskDoc.id}">
+                            <input type="hidden" id="answer-key" value="${task.answerKey}">
+                            
+                            <div class="form-group">
+                                <label for="jawaban" style="font-size:1.1rem;">Jawaban Esai Anda:</label>
+                                <textarea id="jawaban" rows="12" required placeholder="Ketikan jawaban Anda di sini secara lengkap dan jelas..." style="resize: vertical; font-size:1rem; line-height:1.6;"></textarea>
+                                <small style="color:#888; display:block; margin-top:8px;">*Jawaban akan dinilai otomatis oleh sistem berdasarkan kata kunci.</small>
+                            </div>
+                            
+                            <button type="button" id="pre-submit-btn" class="btn" style="width:100%; font-size:1.1rem; padding: 15px;">
+                                <i class="fa-solid fa-paper-plane"></i> Kirim Jawaban Saya
+                            </button>
+                        </form>
+                    </div>
+                `;
+
+                document.getElementById('pre-submit-btn').onclick = () => {
+                    const ans = document.getElementById('jawaban').value.trim();
+                    if(ans.length < 20) return alert("Jawaban terlalu pendek. Mohon jelaskan lebih detail.");
+                    
+                    window.pendingSubmission = { id: taskDoc.id, key: task.answerKey };
+                    openModal('confirm-modal');
+                };
+
+                document.getElementById('confirm-submit-btn').onclick = async () => {
+                    closeModal('confirm-modal');
+                    if (window.pendingSubmission) {
+                        await processSubmission(window.pendingSubmission.id, window.pendingSubmission.key);
+                    }
+                };
             } else {
-                mainView.innerHTML = '<h2>Selamat Datang!</h2><p>Saat ini belum ada tugas orientasi yang aktif. Silakan cek kembali nanti.</p>';
+                contentDiv.innerHTML = `
+                    <div class="view-card" style="text-align:center; padding:50px;">
+                        <i class="fa-solid fa-mug-hot" style="font-size:4rem; color:#ddd; margin-bottom:20px;"></i>
+                        <h3 style="color:#888;">Belum Ada Tugas</h3>
+                        <p style="color:#999;">Silakan cek kembali nanti untuk tugas orientasi terbaru.</p>
+                    </div>
+                `;
             }
-        } catch(err) { mainView.innerHTML = '<p>Gagal memuat tugas.</p>'; }
-        finally { hideLoading(); }
+        } catch (error) {
+            console.error(error);
+            mainView.innerHTML = '<div class="view-card"><p style="text-align:center; color:red;">Gagal memuat data. Periksa koneksi internet.</p></div>';
+        } finally {
+            hideLoading();
+        }
     }
-    
-    updateView('role-selection-view');
-});
+
+    // --- 6. LOGIKA AUTO-GRADING ---
+    async function processSubmission(taskId, answerKey) {
+        showLoading('Menganalisis jawaban...'); 
+        
+        try {
+            if (!auth.currentUser) throw new Error("Sesi habis. Silakan login ulang.");
+
+            const studentAnswer = document.getElementById('jawaban').value;
+            const clean = (text) => text.toLowerCase().replace(/[^\w\s]/gi, '').split(/\s+/).filter(w => w.length > 3);
+            const keyWords = new Set(clean(answerKey));
+            const studentWords = new Set(clean(studentAnswer));
+            
+            let matchCount = 0;
+            keyWords.forEach(word => { if (studentWords.has(word)) matchCount++; });
+            
+            let finalScore = 0;
+            if (keyWords.size > 0) { finalScore = Math.round((matchCount / keyWords.size) * 100); }
+            if (finalScore > 100) finalScore = 100;
+
+            let feedback = "";
+            if (finalScore >= 85) feedback = "Luar biasa! Pemahaman Anda sangat mendalam.";
+            else if (finalScore >= 70) feedback = "Jawaban baik, mencakup sebagian besar poin penting.";
+            else if (finalScore >= 50) feedback = "Cukup, namun masih ada poin kunci yang terlewat.";
+            else feedback = "Jawaban kurang lengkap. Perhatikan kata kunci dari materi.";
+
+            await db.collection('orientation_submissions').add({
+                taskId: taskId,
+                studentUid: currentUser.uid,
+                studentName: currentUser.name,
+                answer: studentAnswer,
+                score: finalScore,
+                feedback: feedback,
+                submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            hideLoading();
+            document.getElementById('result-score').textContent = finalScore;
+            document.getElementById('result-feedback').textContent = feedback;
+            openModal('result-modal');
+
+        } catch (e) {
+            hideLoading(); 
+            alert("Gagal mengirim: " + e.message);
+        }
+    }
+
+    // --- 7. DASHBOARD PENGAJAR (ADMIN) ---
+    async function renderPengajarDashboard() {
+        updateView('main-view');
+        const mainView = document.getElementById('main-view');
+        
+        mainView.innerHTML = `
+            <div class="view-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h2 style="margin:0;">Dashboard Admin</h2>
+                    <button class="btn btn-danger" onclick="logout()" style="width: auto; margin:0; padding: 8px 12px; font-size: 0.8rem;">
+                        <i class="fa-solid fa-power-off"></i> Keluar
+                    </button>
+                </div>
+                <p style="color:#666;">Kelola tugas orientasi dan pantau jawaban siswa.</p>
+            </div>
+            
+            <div id="assignment-list" class="assignment-list"></div>
+            
+            <div class="view-card" style="margin-top:30px; border-left: 5px solid var(--secondary-color);">
+                <h3 style="color:#003366; margin-bottom:15px;"><i class="fa-solid fa-pen-to-square"></i> Buat Tugas Baru</h3>
+                <p style="font-size:0.95rem; color:#555; margin-bottom:25px;">
+                    Masukkan instruksi soal dan <strong>paragraf kunci jawaban</strong>. Sistem akan menilai otomatis berdasarkan seberapa banyak kata kunci yang cocok.
+                </p>
+                <form id="add-assignment-form">
+                    <div class="form-group">
+                        <label for="judul-tugas">Judul Tugas</label>
+                        <input id="judul-tugas" required placeholder="Contoh: Esai Motivasi Belajar">
+                    </div>
+                    <div class="form-group">
+                        <label for="instruksi-tugas">Instruksi Soal</label>
+                        <textarea id="instruksi-tugas" rows="4" required placeholder="Jelaskan apa yang harus dikerjakan siswa..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="kunci-jawaban" style="color:var(--primary-color);">Kunci Jawaban (Untuk Auto-Grading)</label>
+                        <textarea id="kunci-jawaban" rows="5" required placeholder="Masukkan jawaban ideal/referensi yang mengandung semua kata kunci penting..."></textarea>
+                    </div>
+                    <button type="submit" class="btn" style="width:100%;">
+                        <i class="fa-solid fa-upload"></i> Terbitkan Tugas
+                    </button>
+                </form>
+            </div>
+        `;
+
+        document.getElementById('add-assignment-form').onsubmit = async (e) => {
+            e.preventDefault();
+            if(!confirm("Terbitkan tugas ini?")) return;
+
+            const btn = e.target.querySelector('button');
+            btn.disabled = true; btn.innerHTML = "Menerbitkan..."; 
+            
+            try {
+                // Ambil data form (Instruksi hanya dari satu field textarea sekarang)
+                const instr = document.getElementById('instruksi-tugas').value;
+
+                await db.collection('orientation_tasks').add({
+                    title: document.getElementById('judul-tugas').value,
+                    instruction: instr,
+                    answerKey: document.getElementById('kunci-jawaban').value,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert('Tugas berhasil diterbitkan.');
+                renderPengajarDashboard(); 
+            } catch (err) { alert('Error: ' + err.message); } 
+            finally { hideLoading(); }
+        };
+
+        const listDiv = document.getElementById('assignment-list');
+        const snap = await db.collection('orientation_tasks').orderBy('createdAt', 'desc').limit(10).get();
+        
+        if (snap.empty) {
+            listDiv.innerHTML = '<div class="view-card" style="text-align:center; color:#999; width:100%;">Belum ada tugas yang dibuat.</div>';
+        } else {
+            snap.forEach(doc => {
+                const t = doc.data();
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div>
+                        <h3 style="margin-bottom:5px;">${t.title}</h3>
+                        <p style="font-size:0.85rem; color:#888;">Dibuat: ${t.createdAt ? new Date(t.createdAt.seconds*1000).toLocaleDateString() : '-'}</p>
+                        <p style="font-size:0.9rem; color:#555; margin-top:10px;">${t.instruction.substring(0, 80)}...</p>
+                    </div>
+                    <div style="margin-top:20px; display:flex; gap:10px;">
+                        <button class="btn" onclick="viewSubmissions('${doc.id}', '${t.title}')" style="flex:1; font-size:0.9rem;">
+                            <i class="fa-solid fa-eye"></i> Lihat Jawaban
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteTask('${doc.id}')" style="width:auto; padding: 10px 15px;">
+                            <i class="fa-solid fa-trash"></i> Hapus
+                        </button>
+                    </div>
+                `;
+                listDiv.appendChild(card);
+            });
+        }
+    }
+
+    // --- 8. FUNGSI VIEW SUBMISSIONS (HALAMAN BARU) ---
+    window.viewSubmissions = async (taskId, taskTitle) => {
+        showLoading('Mengambil data...');
+        updateView('submission-detail-view');
+        
+        document.getElementById('task-info-header').textContent = `Tugas: ${taskTitle}`;
+        const container = document.getElementById('submission-list-container');
+        container.innerHTML = '';
+
+        try {
+            const snap = await db.collection('orientation_submissions')
+                .where('taskId', '==', taskId)
+                .get(); 
+
+            if (snap.empty) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding: 40px; color:#999;">
+                        <i class="fa-solid fa-inbox" style="font-size:3rem; margin-bottom:10px; display:block;"></i>
+                        <p>Belum ada siswa yang mengerjakan tugas ini.</p>
+                    </div>`;
+            } else {
+                const submissions = [];
+                snap.forEach(doc => submissions.push(doc.data()));
+                submissions.sort((a, b) => b.score - a.score);
+
+                submissions.forEach(s => {
+                    const el = document.createElement('div');
+                    el.className = 'submission-detail-card';
+                    
+                    let scoreColor = '#28a745'; 
+                    if(s.score < 50) scoreColor = '#dc3545';
+                    else if(s.score < 80) scoreColor = '#fd7e14';
+
+                    el.innerHTML = `
+                        <div class="submission-header">
+                            <div style="display:flex; align-items:center; gap:15px;">
+                                <div style="width:45px; height:45px; background:#f0f2f5; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366; font-size:1.2rem;">
+                                    ${s.studentName.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h4 style="margin:0; color:#003366; font-size:1.1rem;">${s.studentName}</h4>
+                                    <small style="color:#888;">${s.submittedAt ? new Date(s.submittedAt.seconds*1000).toLocaleString() : '-'}</small>
+                                </div>
+                            </div>
+                            <div class="submission-score" style="background-color:${scoreColor};">
+                                ${s.score}
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom:10px; font-weight:600; color:#555;">Jawaban Siswa:</div>
+                        <div class="submission-answer">${s.answer}</div>
+                        
+                        <div style="font-size:0.9rem; color:#555; background:#f8f9fa; border:1px dashed #ccc; padding:12px; border-radius:8px;">
+                            <i class="fa-solid fa-robot" style="color:var(--primary-color);"></i> <strong>Analisis Sistem:</strong> ${s.feedback}
+                        </div>
+                    `;
+                    container.appendChild(el);
+                });
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Gagal mengambil data: ' + e.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    window.backToDashboard = () => {
+        renderPengajarDashboard();
+    };
+
+    window.deleteTask = async (id) => {
+        if(!confirm('Hapus tugas ini beserta seluruh jawaban terkait?')) return;
+        showLoading('Menghapus...');
+        try {
+            await db.collection('orientation_tasks').doc(id).delete();
+            renderPengajarDashboard();
+        } catch(e) {
+            alert("Gagal menghapus: " + e.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
 </script>
 </body>
 </html>

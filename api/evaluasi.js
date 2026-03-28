@@ -35,10 +35,10 @@ Struktur JSON harus persis seperti contoh berikut:
     let textResponse = "";
 
     try {
-        // --- COBA GEMINI ---
+        // --- COBA GEMINI (UPGRADE KE 2.5 FLASH) ---
         if (geminiKey) {
-            console.log("Mencoba menggunakan Gemini...");
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+            console.log("Mencoba menggunakan Gemini 2.5 Flash...");
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -52,15 +52,14 @@ Struktur JSON harus persis seperti contoh berikut:
                 textResponse = data.candidates[0].content.parts[0].text;
                 console.log("Gemini berhasil merespons!");
             } else {
-                // INI PELACAKNYA: Akan mencetak alasan error dari Google ke Vercel Logs
                 const errorData = await response.text();
                 console.error("ALASAN GEMINI GAGAL:", errorData);
             }
         }
 
-        // --- COBA GROQ JIKA GEMINI GAGAL ---
+        // --- COBA GROQ (UPGRADE KE LLAMA 3.1) ---
         if (!textResponse && groqKey) {
-            console.log("Mencoba menggunakan Groq...");
+            console.log("Mencoba menggunakan Groq (Llama 3.1)...");
             const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
                 method: 'POST',
                 headers: { 
@@ -68,7 +67,7 @@ Struktur JSON harus persis seperti contoh berikut:
                     'Content-Type': 'application/json' 
                 },
                 body: JSON.stringify({
-                    model: "llama3-8b-8192", 
+                    model: "llama-3.1-8b-instant", // Model baru Groq yang aktif dan super cepat
                     messages: [{ role: "user", content: promptText }],
                     temperature: 0.1
                 })
@@ -79,7 +78,6 @@ Struktur JSON harus persis seperti contoh berikut:
                 textResponse = data.choices[0].message.content;
                 console.log("Groq berhasil merespons!");
             } else {
-                // INI PELACAKNYA: Akan mencetak alasan error dari Groq
                 const errorData = await response.text();
                 console.error("ALASAN GROQ GAGAL:", errorData);
             }

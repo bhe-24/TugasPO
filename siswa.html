@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dashboard Siswa - Cendekia Aksara</title>
+    <title>Dashboard Cendekiawan - Cendekia Aksara</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -18,14 +18,14 @@
         * { box-sizing: border-box; }
         body { font-family: 'Poppins', sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: var(--text-color); line-height: 1.6; } 
 
-        .container { max-width: 1100px; width: 100%; margin: 0 auto; } 
-        .view-card { background: #fff; padding: 30px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 30px; }
+        .container { max-width: 900px; width: 100%; margin: 0 auto; } 
+        .view-card { background: #fff; padding: 30px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 25px; }
         .hidden { display: none !important; } 
 
         h2, h3 { color: #003366; margin-top: 0; } 
         
         .form-group { margin-bottom: 20px; } 
-        textarea { width: 100%; padding: 12px 16px; border: 2px solid #eef1f6; border-radius: 10px; font-family: inherit; font-size: 1rem; resize: vertical; min-height: 100px; transition: all 0.3s;} 
+        textarea { width: 100%; padding: 12px 16px; border: 2px solid #eef1f6; border-radius: 10px; font-family: inherit; font-size: 1rem; resize: vertical; min-height: 120px; transition: all 0.3s;} 
         textarea:focus { border-color: var(--primary-color); outline: none; }
 
         .btn { padding: 12px 24px; border: none; border-radius: 10px; color: #fff; background: linear-gradient(135deg, var(--primary-color), #004080); font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; } 
@@ -34,7 +34,10 @@
         .btn-secondary { background: #6c757d; }
 
         .tag-info { background: #e3f2fd; color: #005a9c; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: inline-block; margin-bottom: 15px; }
+        .tag-success { background: #e8f5e9; color: #28a745; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: inline-block; margin-bottom: 15px; }
+        
         .score-circle { width: 120px; height: 120px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; margin: 0 auto 20px auto; border: 5px solid #fff; box-shadow: 0 10px 30px rgba(0,90,156,0.4);}
+        .score-mini { width: 60px; height: 60px; background: #28a745; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; }
 
         /* Modal Styles */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(5px); }
@@ -56,6 +59,8 @@
 
     <div class="container">
         <div id="student-header"></div>
+        
+        <h3 style="margin: 20px 0 15px; color:#555;"><i class="fa-solid fa-list-check"></i> Daftar Tugas Orientasi</h3>
         <div id="student-content"></div>
     </div>
 
@@ -77,12 +82,12 @@
         <div class="modal-content">
             <span class="modal-icon">✨</span>
             <h3 style="margin-bottom: 5px;">Tugas Selesai!</h3>
-            <p style="color: #666;">Evaluasi Sistem selesai.</p>
+            <p style="color: #666;">Evaluasi Sistem telah selesai.</p>
             <div class="score-circle" id="result-score">0</div>
             <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
                 <p id="result-feedback" style="font-size: 0.95em; color: #444; font-style: italic; margin: 0;"></p>
             </div>
-            <button class="btn" onclick="closeModal('result-modal'); location.reload();">Tutup & Refresh</button>
+            <button class="btn" onclick="closeModal('result-modal'); location.reload();">Tutup & Lanjut Belajar</button>
         </div>
     </div>
 
@@ -109,6 +114,7 @@
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
     let currentUser = {};
+    window.activeTasksData = {}; // Menyimpan data tugas sementara untuk dikirim ke API
 
     // 2. PROTEKSI HALAMAN (HANYA BISA DIAKSES JIKA LOGIN)
     auth.onAuthStateChanged(async user => {
@@ -137,19 +143,19 @@
     });
 
     window.logout = () => {
-        if(confirm("Keluar dari aplikasi?")) {
+        if(confirm("Keluar dari Cendekia Aksara?")) {
             showLoading('Keluar...');
             auth.signOut().then(() => { window.location.href = "index.html"; });
         }
     };
 
-    // 3. RENDER DASHBOARD SISWA
+    // 3. RENDER DASHBOARD SISWA (MULTI-TUGAS)
     async function renderStudentDashboard() {
         const headerDiv = document.getElementById('student-header');
         const contentDiv = document.getElementById('student-content');
         
         headerDiv.innerHTML = `
-            <div class="view-card" style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="view-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <div>
                     <small style="color:#888;">Selamat Datang,</small>
                     <h2 style="margin:0; font-size: 1.5rem; color:var(--primary-color);">${currentUser.name}</h2>
@@ -161,95 +167,127 @@
         `;
 
         try {
-            const tasksSnap = await db.collection('orientation_tasks').orderBy('createdAt', 'desc').get();
+            // Urutkan berdasarkan waktu dibuat. (asc = tugas pertama di atas)
+            const tasksSnap = await db.collection('orientation_tasks').orderBy('createdAt', 'asc').get();
+            
+            // Ambil semua jawaban milik siswa ini
             const subSnap = await db.collection('orientation_submissions').where('studentUid', '==', currentUser.uid).get();
             
-            let mySubmission = null;
-            if (!subSnap.empty) { mySubmission = subSnap.docs[0].data(); }
+            // Peta untuk mengecek tugas mana yang sudah dikerjakan
+            const mySubmissions = {};
+            subSnap.forEach(doc => {
+                mySubmissions[doc.data().taskId] = doc.data();
+            });
 
-            if (mySubmission) {
-                // STATUS: SUDAH DIKERJAKAN
-                contentDiv.innerHTML = `
-                    <div class="view-card" style="text-align:center; padding:50px 30px;">
-                        <div style="background:#e8f5e9; width:90px; height:90px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 25px auto;">
-                            <i class="fa-solid fa-check" style="font-size:3rem; color:#28a745;"></i>
-                        </div>
-                        <h3 style="font-size:1.6rem; margin-bottom: 10px;">Tugas Selesai</h3>
-                        <p style="margin-bottom: 30px; color:#666;">Anda telah menyelesaikan masa orientasi.</p>
-                        
-                        <div style="background:#f8f9fa; padding:30px; border-radius:16px; display:inline-block; width:100%; max-width:400px; border:1px solid #eee;">
-                            <p style="margin-bottom:15px; font-size:1rem; color:#555; font-weight:600;">Nilai Kelulusan:</p>
-                            <div class="score-circle" style="margin-bottom: 20px;">${mySubmission.score}</div>
-                            <p style="font-size:0.95rem; color:#555; font-style:italic;">"${mySubmission.feedback}"</p>
-                        </div>
-                    </div>
-                `;
-            } else if (!tasksSnap.empty) {
-                // STATUS: BELUM DIKERJAKAN
-                const taskDoc = tasksSnap.docs[0];
-                const task = taskDoc.data();
-                
-                contentDiv.innerHTML = `
-                    <div class="view-card">
-                        <span class="tag-info"><i class="fa-solid fa-star"></i> Tugas Aktif</span>
-                        <h3 style="font-size: 1.6rem; margin-bottom: 20px;">${task.title}</h3>
-                        
-                        <div style="background:#f0f7ff; padding:20px; border-radius:12px; margin-bottom:25px; border-left: 5px solid var(--primary-color);">
-                            <strong style="color:var(--primary-color); display:block; margin-bottom:8px; font-size:1.1rem;">Instruksi Pengerjaan:</strong>
-                            <p id="instruksi-teks" style="white-space: pre-line; margin:0; font-size:1rem; color:#444;">${task.instruction}</p>
-                        </div>
-                        
-                        <form id="submission-form">
-                            <div class="form-group">
-                                <label for="jawaban" style="font-size:1.1rem;">Jawaban Esai Anda:</label>
-                                <textarea id="jawaban" rows="12" required placeholder="Ketikkan jawaban Anda secara lengkap dan jelas..."></textarea>
-                            </div>
-                            <button type="button" id="pre-submit-btn" class="btn" style="width:100%; padding: 15px;">
-                                <i class="fa-solid fa-paper-plane"></i> Kirim Jawaban Saya
-                            </button>
-                        </form>
-                    </div>
-                `;
-
-                document.getElementById('pre-submit-btn').onclick = () => {
-                    const ans = document.getElementById('jawaban').value.trim();
-                    if(ans.length < 20) return alert("Jawaban terlalu pendek. Mohon jelaskan lebih detail.");
-                    window.pendingSubmission = { id: taskDoc.id, key: task.answerKey };
-                    openModal('confirm-modal');
-                };
-
-                document.getElementById('confirm-submit-btn').onclick = async () => {
-                    closeModal('confirm-modal');
-                    if (window.pendingSubmission) { 
-                        await processSubmission(window.pendingSubmission.id, window.pendingSubmission.key); 
-                    }
-                };
-            } else {
+            if (tasksSnap.empty) {
                 contentDiv.innerHTML = `
                     <div class="view-card" style="text-align:center; padding:50px;">
                         <i class="fa-solid fa-mug-hot" style="font-size:4rem; color:#ddd; margin-bottom:20px;"></i>
-                        <h3 style="color:#888;">Belum Ada Tugas</h3>
-                        <p style="color:#999;">Silakan cek kembali nanti.</p>
+                        <h3 style="color:#888;">Belum Ada Tugas Aktif</h3>
+                        <p style="color:#999;">Pengajar belum menerbitkan tugas orientasi. Cek lagi nanti ya!</p>
                     </div>
                 `;
+                return;
             }
+
+            let htmlContent = `<div style="display:flex; flex-direction:column; gap:20px;">`;
+
+            tasksSnap.forEach(doc => {
+                const task = doc.data();
+                const taskId = doc.id;
+                const sub = mySubmissions[taskId]; // Cek apakah siswa sudah jawab tugas ini
+
+                // Simpan data instruksi ke memori browser untuk dipakai Vercel nanti
+                window.activeTasksData[taskId] = task;
+
+                if (sub) {
+                    // JIKA SUDAH DIKERJAKAN
+                    let statusLabel = sub.isManualGraded ? "Telah Dikoreksi Pengajar" : "Telah Dievaluasi Sistem";
+                    let scoreColor = sub.score >= 80 ? '#28a745' : (sub.score >= 50 ? '#fd7e14' : '#dc3545');
+
+                    htmlContent += `
+                        <div class="view-card" style="border-left: 5px solid ${scoreColor}; margin-bottom:0; opacity: 0.95;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap: wrap; gap:10px;">
+                                <div>
+                                    <span class="tag-success"><i class="fa-solid fa-check-double"></i> Selesai</span>
+                                    <h3 style="margin: 5px 0 10px;">${task.title}</h3>
+                                </div>
+                                <div class="score-mini" style="background-color: ${scoreColor};">${sub.score}</div>
+                            </div>
+                            
+                            <div style="background:#f8f9fa; padding:15px; border-radius:10px; margin-top:15px; border: 1px solid #eee;">
+                                <p style="font-size:0.9rem; font-weight:600; color:#555; margin:0 0 5px 0;">
+                                    <i class="fa-solid fa-star" style="color:var(--secondary-color);"></i> Catatan (${statusLabel}):
+                                </p>
+                                <p style="font-size:0.95rem; color:#444; margin:0; font-style:italic;">"${sub.feedback}"</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // JIKA BELUM DIKERJAKAN
+                    htmlContent += `
+                        <div class="view-card" style="border-left: 5px solid var(--primary-color); margin-bottom:0;">
+                            <span class="tag-info"><i class="fa-solid fa-pen"></i> Tugas Baru</span>
+                            <h3 style="margin: 5px 0 20px;">${task.title}</h3>
+                            
+                            <div style="background:#f0f7ff; padding:20px; border-radius:12px; margin-bottom:25px;">
+                                <strong style="color:var(--primary-color); display:block; margin-bottom:8px; font-size:1.1rem;">Instruksi Pengerjaan:</strong>
+                                <p style="white-space: pre-line; margin:0; font-size:1rem; color:#444;">${task.instruction}</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="jawaban-${taskId}" style="font-size:1.1rem;">Ruang Pengerjaan:</label>
+                                <textarea id="jawaban-${taskId}" required placeholder="Ketikkan jawaban terbaikmu di sini..."></textarea>
+                            </div>
+                            
+                            <button type="button" onclick="prepareSubmission('${taskId}')" class="btn" style="width:100%;">
+                                <i class="fa-solid fa-paper-plane"></i> Kirim Jawaban
+                            </button>
+                        </div>
+                    `;
+                }
+            });
+
+            htmlContent += `</div>`;
+            contentDiv.innerHTML = htmlContent;
+
         } catch (error) {
-            contentDiv.innerHTML = '<div class="view-card"><p style="text-align:center; color:red;">Gagal memuat data.</p></div>';
+            console.error(error);
+            contentDiv.innerHTML = '<div class="view-card"><p style="text-align:center; color:red;">Gagal memuat daftar tugas.</p></div>';
         } finally {
             hideLoading();
         }
     }
 
-    // 4. LOGIKA EVALUASI SISTEM (Via API Vercel)
-    async function processSubmission(taskId, referenceText) {
+    // 4. LOGIKA PENGIRIMAN & EVALUASI
+    window.prepareSubmission = (taskId) => {
+        const ans = document.getElementById(`jawaban-${taskId}`).value.trim();
+        if(ans.length < 20) return alert("Jawaban terlalu pendek. Mohon berikan penjelasan yang lebih lengkap.");
+        
+        window.pendingSubmission = { id: taskId };
+        openModal('confirm-modal');
+    };
+
+    document.getElementById('confirm-submit-btn').onclick = async () => {
+        closeModal('confirm-modal');
+        if (window.pendingSubmission) { 
+            await processSubmission(window.pendingSubmission.id); 
+        }
+    };
+
+    async function processSubmission(taskId) {
         showLoading('Sistem sedang membaca dan mengevaluasi jawabanmu...'); 
         
         try {
-            const studentAnswer = document.getElementById('jawaban').value;
-            // Mengambil teks instruksi yang tampil di layar
-            const instructionText = document.getElementById('instruksi-teks').innerText;
+            // Ambil jawaban spesifik dari textarea tugas tersebut
+            const studentAnswer = document.getElementById(`jawaban-${taskId}`).value;
+            
+            // Ambil instruksi dan referensi dari memori yang sudah kita simpan
+            const taskData = window.activeTasksData[taskId];
+            const instructionText = taskData.instruction;
+            const referenceText = taskData.answerKey;
 
-            // Mengirim data ke Vercel Serverless Function (Backend kita)
+            // Memanggil Backend Vercel API
             const response = await fetch('/api/evaluasi', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -260,7 +298,6 @@
                 })
             });
 
-            // Jika respons dari server gagal (bukan 200 OK)
             if (!response.ok) {
                 const errData = await response.json();
                 throw new Error(errData.feedback || "Gagal menghubungi Sistem Pusat.");
@@ -268,12 +305,11 @@
 
             const result = await response.json();
 
-            // Memastikan data yang diterima dari Vercel valid
             if (result.error || result.score === undefined) {
                 throw new Error(result.feedback || "Terjadi kesalahan saat memproses nilai.");
             }
 
-            // Menyimpan hasil dari Sistem ke Firebase
+            // Simpan ke Firebase Database
             await db.collection('orientation_submissions').add({
                 taskId: taskId, 
                 studentUid: currentUser.uid, 
@@ -281,7 +317,7 @@
                 answer: studentAnswer, 
                 score: result.score, 
                 feedback: result.feedback,
-                isManualGraded: false, // Menandakan ini murni nilai dari Sistem, belum diedit Pengajar
+                isManualGraded: false, 
                 submittedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
@@ -292,7 +328,7 @@
 
         } catch (e) {
             hideLoading(); 
-            alert("Maaf, proses gagal: " + e.message);
+            alert("Maaf, proses evaluasi gagal: " + e.message);
         }
     }
 </script>

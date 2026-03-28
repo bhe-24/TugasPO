@@ -15,21 +15,21 @@
         
         :root { --primary-color: #005a9c; --secondary-color: #f7a04a; --bg-color: #f4f7fa; --text-color: #333; --card-shadow: 0 4px 15px rgba(0,0,0,0.05); }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; word-wrap: break-word; }
         body { font-family: 'Poppins', sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: var(--text-color); line-height: 1.6; } 
 
         .container { max-width: 900px; width: 100%; margin: 0 auto; } 
-        .view-card { background: #fff; padding: 30px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 25px; }
+        .view-card { background: #fff; padding: 30px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 25px; overflow: hidden; }
         .hidden { display: none !important; } 
 
         h2, h3 { color: #003366; margin-top: 0; } 
         
-        .form-group { margin-bottom: 20px; } 
-        textarea { width: 100%; padding: 12px 16px; border: 2px solid #eef1f6; border-radius: 10px; font-family: inherit; font-size: 1rem; resize: vertical; min-height: 120px; transition: all 0.3s;} 
-        textarea:focus { border-color: var(--primary-color); outline: none; }
+        .form-group { margin-bottom: 20px; width: 100%; } 
+        textarea { width: 100%; padding: 12px 16px; border: 2px solid #eef1f6; border-radius: 10px; font-family: inherit; font-size: 1rem; resize: vertical; min-height: 120px; transition: all 0.3s; box-sizing: border-box;} 
+        textarea:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 4px rgba(0, 90, 156, 0.1);}
 
-        .btn { padding: 12px 24px; border: none; border-radius: 10px; color: #fff; background: linear-gradient(135deg, var(--primary-color), #004080); font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; } 
-        .btn:hover { transform: translateY(-2px); }
+        .btn { padding: 12px 24px; border: none; border-radius: 10px; color: #fff; background: linear-gradient(135deg, var(--primary-color), #004080); font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center; } 
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,90,156,0.2);}
         .btn-danger { background: linear-gradient(135deg, #dc3545, #b02a37); } 
         .btn-secondary { background: #6c757d; }
 
@@ -37,21 +37,27 @@
         .tag-success { background: #e8f5e9; color: #28a745; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: inline-block; margin-bottom: 15px; }
         
         .score-circle { width: 120px; height: 120px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; margin: 0 auto 20px auto; border: 5px solid #fff; box-shadow: 0 10px 30px rgba(0,90,156,0.4);}
-        .score-mini { width: 60px; height: 60px; background: #28a745; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; }
+        .score-mini { width: 60px; height: 60px; background: #28a745; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
 
-        /* Modal Styles */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(5px); }
+        /* Modal Styles yang Lebih Responsif */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(5px); padding: 20px; }
         .modal.active { opacity: 1; pointer-events: auto; }
-        .modal-content { background: white; padding: 35px; border-radius: 20px; width: 90%; max-width: 450px; text-align: center; transform: scale(0.95); transition: transform 0.3s; }
+        .modal-content { background: white; padding: 35px 25px; border-radius: 20px; width: 100%; max-width: 420px; text-align: center; transform: scale(0.95); transition: transform 0.3s; box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
         .modal.active .modal-content { transform: scale(1); }
-        .modal-icon { font-size: 3.5rem; margin-bottom: 20px; display: block; }
+        .modal-icon { font-size: 3.5rem; margin-bottom: 15px; display: block; }
+        .modal-btn-group { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .modal-btn-group .btn { flex: 1; min-width: 120px; }
 
+        /* Loading Spinner Diperbaiki */
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; } 
         .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* Tweaks HP Spesifik */
         @media (max-width: 768px) {
             body { padding: 15px; }
-            .view-card { padding: 20px; border-radius: 12px; }
+            .view-card { padding: 20px; }
+            .score-circle { width: 100px; height: 100px; font-size: 2.5rem; }
         }
     </style>
 </head>
@@ -66,14 +72,35 @@
 
     <div id="loading-overlay"><div class="spinner"></div><p id="loading-text" style="color:var(--primary-color); font-weight:600; margin-top:20px;">Memuat Dashboard...</p></div>
 
+    <div id="alert-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-icon" id="alert-icon">🔔</span>
+            <h3 style="margin-bottom: 10px;" id="alert-title">Pemberitahuan</h3>
+            <p style="margin-bottom: 25px; color: #555; font-size: 0.95rem;" id="alert-message">Pesan di sini.</p>
+            <button class="btn" onclick="closeModal('alert-modal')" style="width: 100%;">Mengerti</button>
+        </div>
+    </div>
+
+    <div id="logout-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-icon">🚪</span>
+            <h3 style="margin-bottom: 10px;">Ingin Keluar?</h3>
+            <p style="margin-bottom: 25px; color: #555; font-size: 0.95rem;">Apakah kamu yakin ingin keluar dari Cendekia Aksara sekarang?</p>
+            <div class="modal-btn-group">
+                <button class="btn btn-secondary" onclick="closeModal('logout-modal')">Batal</button>
+                <button class="btn btn-danger" onclick="executeLogout()">Ya, Keluar</button>
+            </div>
+        </div>
+    </div>
+
     <div id="confirm-modal" class="modal">
         <div class="modal-content">
             <span class="modal-icon">⚠️</span>
             <h3 style="margin-bottom: 10px;">Konfirmasi Kirim</h3>
-            <p style="margin-bottom: 25px; color: #555;">Jawaban hanya dapat dikirim <strong>SATU KALI</strong>. Pastikan jawaban Anda sudah lengkap sebelum mengirim.</p>
-            <div style="display: flex; gap: 10px; justify-content:center;">
+            <p style="margin-bottom: 20px; color: #555; font-size: 0.95rem;">Jawaban hanya dapat dikirim <strong>SATU KALI</strong>. Pastikan jawabanmu sudah lengkap dan maksimal.</p>
+            <div class="modal-btn-group">
                 <button class="btn btn-secondary" onclick="closeModal('confirm-modal')">Periksa Lagi</button>
-                <button id="confirm-submit-btn" class="btn">Ya, Kirim Sekarang</button>
+                <button id="confirm-submit-btn" class="btn">Kirim Sekarang</button>
             </div>
         </div>
     </div>
@@ -82,12 +109,12 @@
         <div class="modal-content">
             <span class="modal-icon">✨</span>
             <h3 style="margin-bottom: 5px;">Tugas Selesai!</h3>
-            <p style="color: #666;">Evaluasi Sistem telah selesai.</p>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Evaluasi Sistem telah selesai.</p>
             <div class="score-circle" id="result-score">0</div>
             <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                <p id="result-feedback" style="font-size: 0.95em; color: #444; font-style: italic; margin: 0;"></p>
+                <p id="result-feedback" style="font-size: 0.9rem; color: #444; font-style: italic; margin: 0;"></p>
             </div>
-            <button class="btn" onclick="closeModal('result-modal'); location.reload();">Tutup & Lanjut Belajar</button>
+            <button class="btn" onclick="closeModal('result-modal'); location.reload();" style="width: 100%;">Tutup & Lanjut Belajar</button>
         </div>
     </div>
 
@@ -106,15 +133,23 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-    // Utilitas
+    // Utilitas UI
     const loadingOverlay = document.getElementById('loading-overlay');
     function showLoading(msg) { document.getElementById('loading-text').textContent = msg; loadingOverlay.classList.remove('hidden'); }
     function hideLoading() { loadingOverlay.classList.add('hidden'); }
     function openModal(id) { document.getElementById(id).classList.add('active'); }
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
+    // Fungsi Custom Alert (Pengganti alert bawaan browser)
+    function customAlert(title, message, icon = '🔔') {
+        document.getElementById('alert-title').textContent = title;
+        document.getElementById('alert-message').textContent = message;
+        document.getElementById('alert-icon').textContent = icon;
+        openModal('alert-modal');
+    }
+
     let currentUser = {};
-    window.activeTasksData = {}; // Menyimpan data tugas sementara untuk dikirim ke API
+    window.activeTasksData = {}; 
 
     // 2. PROTEKSI HALAMAN (HANYA BISA DIAKSES JIKA LOGIN)
     auth.onAuthStateChanged(async user => {
@@ -142,11 +177,16 @@
         }
     });
 
-    window.logout = () => {
-        if(confirm("Keluar dari Cendekia Aksara?")) {
-            showLoading('Keluar...');
-            auth.signOut().then(() => { window.location.href = "index.html"; });
-        }
+    // Panggil Modal Logout
+    window.confirmLogout = () => {
+        openModal('logout-modal');
+    };
+
+    // Eksekusi Logout sesungguhnya
+    window.executeLogout = () => {
+        closeModal('logout-modal');
+        showLoading('Keluar...');
+        auth.signOut().then(() => { window.location.href = "index.html"; });
     };
 
     // 3. RENDER DASHBOARD SISWA (MULTI-TUGAS)
@@ -155,25 +195,21 @@
         const contentDiv = document.getElementById('student-content');
         
         headerDiv.innerHTML = `
-            <div class="view-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div class="view-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
                 <div>
                     <small style="color:#888;">Selamat Datang,</small>
-                    <h2 style="margin:0; font-size: 1.5rem; color:var(--primary-color);">${currentUser.name}</h2>
+                    <h2 style="margin:0; font-size: 1.5rem; color:var(--primary-color); word-break: break-word;">${currentUser.name}</h2>
                 </div>
-                <button class="btn btn-danger" onclick="logout()" style="padding: 8px 12px; width: auto; margin:0;">
+                <button class="btn btn-danger" onclick="confirmLogout()" style="padding: 8px 12px; width: auto; margin:0;">
                     <i class="fa-solid fa-power-off"></i>
                 </button>
             </div>
         `;
 
         try {
-            // Urutkan berdasarkan waktu dibuat. (asc = tugas pertama di atas)
             const tasksSnap = await db.collection('orientation_tasks').orderBy('createdAt', 'asc').get();
-            
-            // Ambil semua jawaban milik siswa ini
             const subSnap = await db.collection('orientation_submissions').where('studentUid', '==', currentUser.uid).get();
             
-            // Peta untuk mengecek tugas mana yang sudah dikerjakan
             const mySubmissions = {};
             subSnap.forEach(doc => {
                 mySubmissions[doc.data().taskId] = doc.data();
@@ -181,10 +217,10 @@
 
             if (tasksSnap.empty) {
                 contentDiv.innerHTML = `
-                    <div class="view-card" style="text-align:center; padding:50px;">
-                        <i class="fa-solid fa-mug-hot" style="font-size:4rem; color:#ddd; margin-bottom:20px;"></i>
-                        <h3 style="color:#888;">Belum Ada Tugas Aktif</h3>
-                        <p style="color:#999;">Pengajar belum menerbitkan tugas orientasi. Cek lagi nanti ya!</p>
+                    <div class="view-card" style="text-align:center; padding:40px 20px;">
+                        <i class="fa-solid fa-mug-hot" style="font-size:3.5rem; color:#ddd; margin-bottom:20px;"></i>
+                        <h3 style="color:#888; font-size: 1.3rem;">Belum Ada Tugas Aktif</h3>
+                        <p style="color:#999; font-size: 0.95rem;">Pengajar belum menerbitkan tugas orientasi. Cek lagi nanti ya!</p>
                     </div>
                 `;
                 return;
@@ -195,9 +231,8 @@
             tasksSnap.forEach(doc => {
                 const task = doc.data();
                 const taskId = doc.id;
-                const sub = mySubmissions[taskId]; // Cek apakah siswa sudah jawab tugas ini
+                const sub = mySubmissions[taskId]; 
 
-                // Simpan data instruksi ke memori browser untuk dipakai Vercel nanti
                 window.activeTasksData[taskId] = task;
 
                 if (sub) {
@@ -207,10 +242,10 @@
 
                     htmlContent += `
                         <div class="view-card" style="border-left: 5px solid ${scoreColor}; margin-bottom:0; opacity: 0.95;">
-                            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap: wrap; gap:10px;">
-                                <div>
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap: wrap; gap:15px;">
+                                <div style="flex: 1; min-width: 200px;">
                                     <span class="tag-success"><i class="fa-solid fa-check-double"></i> Selesai</span>
-                                    <h3 style="margin: 5px 0 10px;">${task.title}</h3>
+                                    <h3 style="margin: 5px 0 10px; font-size: 1.3rem;">${task.title}</h3>
                                 </div>
                                 <div class="score-mini" style="background-color: ${scoreColor};">${sub.score}</div>
                             </div>
@@ -228,15 +263,15 @@
                     htmlContent += `
                         <div class="view-card" style="border-left: 5px solid var(--primary-color); margin-bottom:0;">
                             <span class="tag-info"><i class="fa-solid fa-pen"></i> Tugas Baru</span>
-                            <h3 style="margin: 5px 0 20px;">${task.title}</h3>
+                            <h3 style="margin: 5px 0 20px; font-size: 1.3rem;">${task.title}</h3>
                             
                             <div style="background:#f0f7ff; padding:20px; border-radius:12px; margin-bottom:25px;">
-                                <strong style="color:var(--primary-color); display:block; margin-bottom:8px; font-size:1.1rem;">Instruksi Pengerjaan:</strong>
-                                <p style="white-space: pre-line; margin:0; font-size:1rem; color:#444;">${task.instruction}</p>
+                                <strong style="color:var(--primary-color); display:block; margin-bottom:8px; font-size:1.05rem;">Instruksi Pengerjaan:</strong>
+                                <p style="white-space: pre-line; margin:0; font-size:0.95rem; color:#444;">${task.instruction}</p>
                             </div>
                             
                             <div class="form-group">
-                                <label for="jawaban-${taskId}" style="font-size:1.1rem;">Ruang Pengerjaan:</label>
+                                <label for="jawaban-${taskId}" style="font-size:1.05rem;">Ruang Pengerjaan:</label>
                                 <textarea id="jawaban-${taskId}" required placeholder="Ketikkan jawaban terbaikmu di sini..."></textarea>
                             </div>
                             
@@ -262,7 +297,11 @@
     // 4. LOGIKA PENGIRIMAN & EVALUASI
     window.prepareSubmission = (taskId) => {
         const ans = document.getElementById(`jawaban-${taskId}`).value.trim();
-        if(ans.length < 20) return alert("Jawaban terlalu pendek. Mohon berikan penjelasan yang lebih lengkap.");
+        
+        if(ans.length < 20) {
+            customAlert("Jawaban Terlalu Singkat", "Mohon jelaskan jawabanmu lebih detail (minimal 20 karakter) agar Sistem bisa menilai dengan akurat.", "⚠️");
+            return;
+        }
         
         window.pendingSubmission = { id: taskId };
         openModal('confirm-modal');
@@ -276,18 +315,14 @@
     };
 
     async function processSubmission(taskId) {
-        showLoading('Sistem sedang membaca dan mengevaluasi jawabanmu...'); 
+        showLoading('Sistem sedang mengevaluasi jawabanmu...'); 
         
         try {
-            // Ambil jawaban spesifik dari textarea tugas tersebut
             const studentAnswer = document.getElementById(`jawaban-${taskId}`).value;
-            
-            // Ambil instruksi dan referensi dari memori yang sudah kita simpan
             const taskData = window.activeTasksData[taskId];
             const instructionText = taskData.instruction;
             const referenceText = taskData.answerKey;
 
-            // Memanggil Backend Vercel API
             const response = await fetch('/api/evaluasi', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -309,7 +344,6 @@
                 throw new Error(result.feedback || "Terjadi kesalahan saat memproses nilai.");
             }
 
-            // Simpan ke Firebase Database
             await db.collection('orientation_submissions').add({
                 taskId: taskId, 
                 studentUid: currentUser.uid, 
@@ -328,7 +362,8 @@
 
         } catch (e) {
             hideLoading(); 
-            alert("Maaf, proses evaluasi gagal: " + e.message);
+            // Ganti alert bawaan dengan customAlert
+            customAlert("Evaluasi Gagal", e.message, "❌");
         }
     }
 </script>

@@ -77,7 +77,7 @@
         <div class="modal-content">
             <span class="modal-icon">✨</span>
             <h3 style="margin-bottom: 5px;">Tugas Selesai!</h3>
-            <p style="color: #666;">Analisis otomatis selesai.</p>
+            <p style="color: #666;">Evaluasi Sistem selesai.</p>
             <div class="score-circle" id="result-score">0</div>
             <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
                 <p id="result-feedback" style="font-size: 0.95em; color: #444; font-style: italic; margin: 0;"></p>
@@ -113,9 +113,8 @@
     // 2. PROTEKSI HALAMAN (HANYA BISA DIAKSES JIKA LOGIN)
     auth.onAuthStateChanged(async user => {
         if (!user) {
-            window.location.href = "index.html"; // Tendang ke halaman login
+            window.location.href = "index.html"; 
         } else {
-            // Ambil data user
             const doc = await db.collection('users').doc(user.uid).get();
             let role = 'siswa';
             let name = user.displayName || user.email.split('@')[0];
@@ -127,7 +126,6 @@
                 role = 'pengajar';
             }
 
-            // Jika dia ternyata admin, tendang ke halaman admin
             if(role === 'pengajar') {
                 window.location.href = "admin.html";
                 return;
@@ -198,7 +196,7 @@
                         
                         <div style="background:#f0f7ff; padding:20px; border-radius:12px; margin-bottom:25px; border-left: 5px solid var(--primary-color);">
                             <strong style="color:var(--primary-color); display:block; margin-bottom:8px; font-size:1.1rem;">Instruksi Pengerjaan:</strong>
-                            <p style="white-space: pre-line; margin:0; font-size:1rem; color:#444;">${task.instruction}</p>
+                            <p id="instruksi-teks" style="white-space: pre-line; margin:0; font-size:1rem; color:#444;">${task.instruction}</p>
                         </div>
                         
                         <form id="submission-form">
@@ -222,7 +220,9 @@
 
                 document.getElementById('confirm-submit-btn').onclick = async () => {
                     closeModal('confirm-modal');
-                    if (window.pendingSubmission) { await processSubmission(window.pendingSubmission.id, window.pendingSubmission.key); }
+                    if (window.pendingSubmission) { 
+                        await processSubmission(window.pendingSubmission.id, window.pendingSubmission.key); 
+                    }
                 };
             } else {
                 contentDiv.innerHTML = `
@@ -240,42 +240,59 @@
         }
     }
 
-    // 4. LOGIKA AUTO-GRADING (Menilai Otomatis)
-    async function processSubmission(taskId, answerKey) {
-        showLoading('Menganalisis jawaban...'); 
+    // 4. LOGIKA EVALUASI SISTEM (Via API Vercel)
+    async function processSubmission(taskId, referenceText) {
+        showLoading('Sistem sedang membaca dan mengevaluasi jawabanmu...'); 
+        
         try {
             const studentAnswer = document.getElementById('jawaban').value;
-            const clean = (text) => text.toLowerCase().replace(/[^\w\s]/gi, '').split(/\s+/).filter(w => w.length > 3);
-            const keyWords = new Set(clean(answerKey));
-            const studentWords = new Set(clean(studentAnswer));
-            
-            let matchCount = 0;
-            keyWords.forEach(word => { if (studentWords.has(word)) matchCount++; });
-            
-            let finalScore = 0;
-            if (keyWords.size > 0) { finalScore = Math.round((matchCount / keyWords.size) * 100); }
-            if (finalScore > 100) finalScore = 100;
+            // Mengambil teks instruksi yang tampil di layar
+            const instructionText = document.getElementById('instruksi-teks').innerText;
 
-            let feedback = "";
-            if (finalScore >= 85) feedback = "Luar biasa! Pemahaman Anda sangat mendalam.";
-            else if (finalScore >= 70) feedback = "Jawaban baik, mencakup sebagian besar poin penting.";
-            else if (finalScore >= 50) feedback = "Cukup, namun masih ada poin kunci yang terlewat.";
-            else feedback = "Jawaban kurang lengkap. Perhatikan kata kunci dari materi.";
+            // Mengirim data ke Vercel Serverless Function (Backend kita)
+            const response = await fetch('/api/evaluasi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    instruction: instructionText,
+                    reference: referenceText,
+                    answer: studentAnswer
+                })
+            });
 
+            // Jika respons dari server gagal (bukan 200 OK)
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.feedback || "Gagal menghubungi Sistem Pusat.");
+            }
+
+            const result = await response.json();
+
+            // Memastikan data yang diterima dari Vercel valid
+            if (result.error || result.score === undefined) {
+                throw new Error(result.feedback || "Terjadi kesalahan saat memproses nilai.");
+            }
+
+            // Menyimpan hasil dari Sistem ke Firebase
             await db.collection('orientation_submissions').add({
-                taskId: taskId, studentUid: currentUser.uid, studentName: currentUser.name,
-                answer: studentAnswer, score: finalScore, feedback: feedback,
+                taskId: taskId, 
+                studentUid: currentUser.uid, 
+                studentName: currentUser.name,
+                answer: studentAnswer, 
+                score: result.score, 
+                feedback: result.feedback,
+                isManualGraded: false, // Menandakan ini murni nilai dari Sistem, belum diedit Pengajar
                 submittedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
             hideLoading();
-            document.getElementById('result-score').textContent = finalScore;
-            document.getElementById('result-feedback').textContent = feedback;
+            document.getElementById('result-score').textContent = result.score;
+            document.getElementById('result-feedback').textContent = result.feedback;
             openModal('result-modal');
 
         } catch (e) {
             hideLoading(); 
-            alert("Gagal mengirim: " + e.message);
+            alert("Maaf, proses gagal: " + e.message);
         }
     }
 </script>

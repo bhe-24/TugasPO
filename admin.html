@@ -306,6 +306,7 @@
     }
 
     // 6. TAB LOG: LIHAT JAWABAN DENGAN FITUR "BACA SELENGKAPNYA"
+    // (Aksa merombak ini agar tidak kena error Firebase Index)
     window.loadLogs = async () => {
         showLoading('Memuat log jawaban...');
         const container = document.getElementById('log-list-container');
@@ -313,16 +314,24 @@
         container.innerHTML = '';
 
         try {
-            let query = db.collection('orientation_submissions').orderBy('submittedAt', 'desc');
-            if(taskId !== 'ALL') { query = query.where('taskId', '==', taskId); }
+            let submissions = [];
             
-            const snap = await query.limit(50).get(); 
+            if(taskId !== 'ALL') { 
+                // Jika difilter per tugas: Ambil data lalu urutkan lewat JavaScript (Mencegah error Index)
+                const snap = await db.collection('orientation_submissions').where('taskId', '==', taskId).get();
+                snap.forEach(doc => submissions.push({ id: doc.id, ...doc.data() }));
+                // Urutkan berdasarkan waktu submit terbaru
+                submissions.sort((a, b) => (b.submittedAt?.seconds || 0) - (a.submittedAt?.seconds || 0));
+            } else {
+                // Jika semua tugas: Boleh diurutkan langsung oleh Firebase
+                const snap = await db.collection('orientation_submissions').orderBy('submittedAt', 'desc').limit(50).get(); 
+                snap.forEach(doc => submissions.push({ id: doc.id, ...doc.data() }));
+            }
 
-            if (snap.empty) {
+            if (submissions.length === 0) {
                 container.innerHTML = `<div style="text-align:center; padding: 40px; color:#999;"><i class="fa-solid fa-folder-open" style="font-size:3rem; margin-bottom:10px;"></i><p>Belum ada data jawaban untuk kriteria ini.</p></div>`;
             } else {
-                snap.forEach(doc => {
-                    const s = doc.data();
+                submissions.forEach(s => {
                     const el = document.createElement('div');
                     el.className = 'submission-detail-card';
                     
@@ -338,8 +347,8 @@
                         </div>
                         
                         <div class="answer-box">
-                            <div id="ans-${doc.id}" class="text-truncate">${s.answer}</div>
-                            <button class="btn-toggle-text" onclick="toggleReadMore('ans-${doc.id}', this)">Baca Selengkapnya <i class="fa-solid fa-chevron-down"></i></button>
+                            <div id="ans-${s.id}" class="text-truncate">${s.answer}</div>
+                            <button class="btn-toggle-text" onclick="toggleReadMore('ans-${s.id}', this)">Baca Selengkapnya <i class="fa-solid fa-chevron-down"></i></button>
                         </div>
 
                         <div style="font-size:0.9rem; color:#555; background:#f0f7ff; padding:12px; border-radius:8px; border-left: 4px solid var(--primary-color);">
@@ -351,7 +360,7 @@
             }
         } catch (e) {
             console.error(e);
-            container.innerHTML = `<p style="color:red; text-align:center;">Gagal memuat log. Index Firebase mungkin perlu dibuat jika menggunakan filter.</p>`;
+            container.innerHTML = `<p style="color:red; text-align:center;">Gagal memuat log: ${e.message}</p>`;
         } finally {
             hideLoading();
         }

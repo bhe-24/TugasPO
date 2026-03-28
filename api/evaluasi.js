@@ -6,7 +6,6 @@ export default async function handler(req, res) {
 
     const { instruction, reference, answer } = req.body;
 
-    // 1. PROMPT SISTEM (Sangat Ketat untuk Struktur JSON)
     const promptText = `Anda adalah Sistem Evaluator Ahli untuk Cendekia Aksara.
     
 KONTEKS:
@@ -36,29 +35,32 @@ Struktur JSON harus persis seperti contoh berikut:
     let textResponse = "";
 
     try {
-        // 2. LOGIKA AUTO-FALLBACK: Coba Gemini terlebih dahulu
+        // --- COBA GEMINI ---
         if (geminiKey) {
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: promptText }] }],
-                        generationConfig: { temperature: 0.1 } // Suhu sangat rendah agar output konsisten
-                    })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    textResponse = data.candidates[0].content.parts[0].text;
-                }
-            } catch (err) {
-                console.warn("Gemini gagal, mencoba beralih ke Groq...", err);
+            console.log("Mencoba menggunakan Gemini...");
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: promptText }] }],
+                    generationConfig: { temperature: 0.1 }
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                textResponse = data.candidates[0].content.parts[0].text;
+                console.log("Gemini berhasil merespons!");
+            } else {
+                // INI PELACAKNYA: Akan mencetak alasan error dari Google ke Vercel Logs
+                const errorData = await response.text();
+                console.error("ALASAN GEMINI GAGAL:", errorData);
             }
         }
 
-        // 3. Jika Gemini gagal/tidak ada key, gunakan Groq sebagai cadangan
+        // --- COBA GROQ JIKA GEMINI GAGAL ---
         if (!textResponse && groqKey) {
+            console.log("Mencoba menggunakan Groq...");
             const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
                 method: 'POST',
                 headers: { 
@@ -75,19 +77,21 @@ Struktur JSON harus persis seperti contoh berikut:
             if (response.ok) {
                 const data = await response.json();
                 textResponse = data.choices[0].message.content;
+                console.log("Groq berhasil merespons!");
+            } else {
+                // INI PELACAKNYA: Akan mencetak alasan error dari Groq
+                const errorData = await response.text();
+                console.error("ALASAN GROQ GAGAL:", errorData);
             }
         }
 
-        // Jika kedua sistem gagal merespons
         if (!textResponse) {
             throw new Error("Semua kunci API Sistem gagal atau tidak dikonfigurasi di Vercel.");
         }
 
-        // 4. PEMBERSIHAN EXTRA: Memastikan output benar-benar JSON
         const cleanJson = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
         const result = JSON.parse(cleanJson);
 
-        // Pastikan format kembalian sesuai sebelum dikirim ke siswa
         if (typeof result.score !== 'number' || !result.feedback) {
             throw new Error("Sistem memberikan format yang tidak valid.");
         }
